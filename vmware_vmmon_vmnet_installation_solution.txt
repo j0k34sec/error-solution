@@ -1,0 +1,110 @@
+VMware vmmon and vmnet Manual Installation Solution
+===================================================
+
+Problem: VMware Workstation 17.6.1 modules (vmmon and vmnet) not working with kernel 6.15.4-arch2-1 on Arch Linux
+
+SOLUTION: Use AUR package with DKMS support
+==========================================
+
+Prerequisites:
+- Arch Linux system
+- VMware Workstation installed
+- AUR helper (yay) installed
+- Root/sudo access
+
+Step-by-Step Installation:
+=========================
+
+1. Check your VMware version:
+   grep "product.version" /etc/vmware/config
+
+2. Check your kernel version:
+   uname -r
+
+3. Install the AUR package with DKMS support:
+   env LD_LIBRARY_PATH="" yay -S vmware-host-modules-dkms-fix-git
+
+   Note: Choose option 1 (vmware-host-modules-dkms-fix-git) when prompted
+
+4. Load the modules:
+   sudo modprobe vmmon
+   sudo modprobe vmnet
+
+5. Start VMware services:
+   sudo systemctl start vmware
+
+6. Verify installation:
+   lsmod | grep -E "(vmmon|vmnet)"
+   systemctl status vmware
+
+Expected Results:
+================
+- vmmon module loaded (size: ~167936 bytes)
+- vmnet module loaded (size: ~81920 bytes)
+- VMware service active and running
+- All VMware network services operational
+
+Verification Commands:
+=====================
+# Check loaded modules
+lsmod | grep vm
+
+# Check VMware service status
+systemctl status vmware
+
+# Check VMware version
+vmware --version
+
+Why This Solution Works:
+========================
+1. DKMS (Dynamic Kernel Module Support) automatically rebuilds modules for new kernels
+2. The AUR package includes patches specifically for recent kernel versions
+3. Handles all the complex header file dependencies automatically
+4. Maintains compatibility across kernel updates
+
+Alternative Methods That Failed:
+===============================
+1. Manual compilation from vmware-host-modules repository
+   - Issue: Missing header files (driver-config.h, vm_basic_defs.h, etc.)
+   - Issue: Autoconf system not generating required files properly
+
+2. Direct tarball replacement method
+   - Issue: Compilation errors due to kernel compatibility
+
+3. Manual header file creation
+   - Issue: Complex dependency chain of missing files
+
+Troubleshooting:
+===============
+If you encounter SSL/library conflicts:
+- Use: env LD_LIBRARY_PATH="" before commands
+- This clears conflicting library paths
+
+If modules fail to load:
+- Check dmesg for error messages
+- Ensure VMware version matches the installed modules
+- Try: sudo dkms install vmmon/1 && sudo dkms install vmnet/1
+
+Maintenance:
+===========
+- DKMS will automatically rebuild modules on kernel updates
+- No manual intervention required for future kernel upgrades
+- If issues arise, reinstall the AUR package
+
+System Information (Working Configuration):
+==========================================
+- OS: Arch Linux
+- Kernel: 6.15.4-arch2-1
+- VMware: Workstation 17.6.1 build-24319023
+- Package: vmware-host-modules-dkms-fix-git 2:17.6.0-1
+- Modules: vmmon, vmnet (both loaded and functional)
+
+Final Status:
+============
+✅ vmmon module: Successfully installed and loaded
+✅ vmnet module: Successfully installed and loaded  
+✅ VMware services: Running properly
+✅ VMware Workstation 17.6.1: Fully operational
+✅ DKMS: Configured for automatic kernel updates
+
+This solution provides a permanent fix that will survive kernel updates.
